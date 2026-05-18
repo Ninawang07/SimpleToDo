@@ -58,7 +58,7 @@ namespace SimpleTodo
 
         private void InitializeForm()
         {
-            this.Text = "SimpleTodo";
+            this.Text = "SimpleTodo v2";
             this.Size = new Size(380, 540);
             this.MinimumSize = new Size(300, 360);
             this.FormBorderStyle = FormBorderStyle.None;
@@ -293,7 +293,7 @@ namespace SimpleTodo
             {
                 Height = 28,
                 Dock = DockStyle.Bottom,
-                BackColor = Color.FromArgb(245, 245, 245)
+                BackColor = Color.FromArgb(238, 238, 238)
             };
 
             lblStats = new Label
