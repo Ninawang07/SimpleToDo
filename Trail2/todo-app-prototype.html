@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do 原型图 - 最终对齐版</title>
+  <style>
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f5;
+      --color-text-primary: #1a1a1a;
+      --color-text-secondary: #666666;
+      --color-text-tertiary: #999999;
+      --color-border-tertiary: #e0e0e0;
+      --color-border-secondary: #bbbbbb;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+    .prototype-label {
+      text-align: center;
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="prototype-label">To-Do 桌面应用 · 最终原型（标签对齐版）</div>
+    <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); width: 340px; overflow: hidden; font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);">
+      <!-- 标题栏 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); -webkit-app-region: drag;">
+        <span style="font-weight: 500; font-size: 15px; color: var(--color-text-primary);">To-Do</span>
+        <div style="display: flex; gap: 12px; -webkit-app-region: no-drag;">
+          <span style="font-size: 14px; color: var(--color-text-tertiary); cursor: pointer;">−</span>
+          <span style="font-size: 14px; color: var(--color-text-tertiary); cursor: pointer;">✕</span>
+        </div>
+      </div>
+      <!-- 输入框 -->
+      <div style="padding: 10px 14px; border-bottom: 0.5px solid var(--color-border-tertiary);">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-secondary);">
+          <span style="font-size: 16px; color: var(--color-text-tertiary); flex-shrink: 0;">＋</span>
+          <span style="font-size: 13px; color: var(--color-text-tertiary);">添加新任务...</span>
+        </div>
+      </div>
+      <!-- 任务列表 -->
+      <div style="padding: 6px 0;">
+        <!-- 主任务1：完成主页设计（已展开） -->
+        <div style="display: flex; align-items: flex-start; padding: 6px 14px; gap: 6px;">
+          <div style="width: 10px; flex-shrink: 0; display: flex; justify-content: center; padding-top: 4px;">
+            <div style="width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--color-text-tertiary);"></div>
+          </div>
+          <div style="width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--color-border-secondary); margin-top: 2px; flex-shrink: 0;"></div>
+          <span style="font-size: 13px; color: var(--color-text-primary); flex: 1; min-width: 0; padding-right: 4px; line-height: 1.5;">完成主页设计</span>
+          <div style="display: flex; gap: 4px; flex-shrink: 0; width: 82px;">
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/15</span>
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/20</span>
+          </div>
+          <div style="width: 10px; flex-shrink: 0;"></div>
+        </div>
+        <!-- 子任务1-1 -->
+        <div style="display: flex; align-items: center; padding: 4px 14px 4px 34px; gap: 6px;">
+          <div style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--color-border-tertiary); flex-shrink: 0;"></div>
+          <span style="font-size: 12px; color: var(--color-text-secondary); flex: 1; min-width: 0; padding-right: 4px;">确定配色方案</span>
+          <div style="display: flex; gap: 4px; flex-shrink: 0; width: 82px;">
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/16</span>
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/18</span>
+          </div>
+          <div style="width: 10px; flex-shrink: 0;"></div>
+        </div>
+        <!-- 子任务1-2 -->
+        <div style="display: flex; align-items: center; padding: 4px 14px 4px 34px; gap: 6px;">
+          <div style="width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--color-border-tertiary); flex-shrink: 0;"></div>
+          <span style="font-size: 12px; color: var(--color-text-secondary); flex: 1; min-width: 0; padding-right: 4px;">画原型图</span>
+          <div style="display: flex; gap: 4px; flex-shrink: 0; width: 82px;">
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/16</span>
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center; visibility: hidden;"></span>
+          </div>
+          <div style="width: 10px; flex-shrink: 0;"></div>
+        </div>
+        <!-- 主任务2：买咖啡豆 -->
+        <div style="display: flex; align-items: flex-start; padding: 6px 14px; gap: 6px;">
+          <div style="width: 10px; flex-shrink: 0;"></div>
+          <div style="width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--color-border-secondary); margin-top: 2px; flex-shrink: 0;"></div>
+          <span style="font-size: 13px; color: var(--color-text-primary); flex: 1; min-width: 0; padding-right: 4px; line-height: 1.5;">买咖啡豆</span>
+          <div style="display: flex; gap: 4px; flex-shrink: 0; width: 82px;">
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/10</span>
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center; visibility: hidden;"></span>
+          </div>
+          <div style="width: 10px; flex-shrink: 0;"></div>
+        </div>
+        <!-- 主任务3：提交季度报告（逾期） -->
+        <div style="display: flex; align-items: flex-start; padding: 6px 14px; gap: 6px;">
+          <div style="width: 10px; flex-shrink: 0;"></div>
+          <div style="width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--color-border-secondary); margin-top: 2px; flex-shrink: 0;"></div>
+          <span style="font-size: 13px; color: var(--color-text-primary); flex: 1; min-width: 0; padding-right: 4px; line-height: 1.5;">提交季度报告</span>
+          <div style="display: flex; gap: 4px; flex-shrink: 0; width: 82px;">
+            <span style="flex: 1; font-size: 10px; color: var(--color-text-tertiary); background: var(--color-background-secondary); padding: 1px 0; border-radius: 8px; border: 0.5px solid var(--color-border-tertiary); text-align: center;">5/12</span>
+            <span style="flex: 1; font-size: 10px; color: #E24B4A; background: #FCEBEB; padding: 1px 0; border-radius: 8px; border: 0.5px solid #F09595; text-align: center;">逾期</span>
+          </div>
+          <div style="width: 10px; flex-shrink: 0;"></div>
+        </div>
+      </div>
+      <!-- 底部 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-top: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary);">
+        <span style="font-size: 12px; color: var(--color-text-secondary);">3 待办 · 1 逾期</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
