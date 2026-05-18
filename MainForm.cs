@@ -95,11 +95,18 @@ namespace SimpleTodo
             }
         }
 
+        // Footer
+        private Panel footer;
+        private Label lblStats;
+        private Button btnClearCompleted;
+        private bool showCompleted = true;
+
         private void BuildLayout()
         {
             BuildTitleBar();
             BuildInputPanel();
             BuildTaskList();
+            BuildFooter();
         }
 
         private void BuildTitleBar()
@@ -276,7 +283,82 @@ namespace SimpleTodo
             taskListPanel.SubTaskAdded += OnSubTaskAdded;
             taskListPanel.DeleteRequested += OnDeleteRequested;
             taskListPanel.ToggleExpand += OnToggleExpand;
+            taskListPanel.CompletedToggled += () => RefreshTaskList();
             this.Controls.Add(taskListPanel);
+        }
+
+        private void BuildFooter()
+        {
+            footer = new Panel
+            {
+                Height = 28,
+                Dock = DockStyle.Bottom,
+                BackColor = Color.FromArgb(245, 245, 245)
+            };
+
+            lblStats = new Label
+            {
+                Font = new Font("Microsoft YaHei UI", 8f),
+                ForeColor = TextMuted,
+                BackColor = Color.Transparent,
+                Location = new Point(12, 6),
+                AutoSize = true
+            };
+
+            btnClearCompleted = new Button
+            {
+                Text = "清除已完成",
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Microsoft YaHei UI", 7.5f),
+                Size = new Size(72, 20),
+                Location = new Point(this.Width - 84, 4),
+                BackColor = Color.Transparent,
+                ForeColor = TextMuted,
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            btnClearCompleted.FlatAppearance.BorderSize = 0;
+            btnClearCompleted.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            btnClearCompleted.Click += (s, e) => ClearCompleted();
+
+            footer.Controls.Add(lblStats);
+            footer.Controls.Add(btnClearCompleted);
+
+            // Top border line
+            footer.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(BorderColor))
+                    e.Graphics.DrawLine(pen, 0, 0, footer.Width, 0);
+            };
+
+            this.Controls.Add(footer);
+        }
+
+        private void UpdateStats()
+        {
+            if (lblStats == null) return;
+            var active = tasks.FindAll(t => !t.Completed && t.ParentId == null).Count;
+            var overdue = tasks.FindAll(t => t.IsOverdue).Count;
+            var completed = tasks.FindAll(t => t.Completed).Count;
+            var text = active + " 待办";
+            if (overdue > 0)
+                text += " · " + overdue + " 逾期";
+            if (completed > 0)
+                text += " · " + completed + " 已完成";
+            lblStats.Text = text;
+            lblStats.Location = new Point(12, 6);
+
+            // Reposition clear button
+            btnClearCompleted.Location = new Point(this.Width - 84, 4);
+        }
+
+        private void ClearCompleted()
+        {
+            var completed = tasks.FindAll(t => t.Completed).ToList();
+            if (completed.Count == 0) return;
+            foreach (var t in completed)
+                RemoveTaskRecursive(t);
+            RequestAutoSave();
+            RefreshTaskList();
         }
 
         // --- System Tray ---
@@ -512,9 +594,10 @@ namespace SimpleTodo
 
         private void RefreshTaskList()
         {
-            var flatList = TaskStore.BuildFlatList(
-                TaskStore.BuildTree(tasks));
-            taskListPanel.Populate(flatList);
+            var tree = TaskStore.BuildTree(tasks);
+            var flatList = TaskStore.BuildFlatList(tree);
+            taskListPanel.Populate(flatList, showCompleted);
+            UpdateStats();
         }
 
         private TaskRow FindRowForTask(TaskItem task)
@@ -561,6 +644,8 @@ namespace SimpleTodo
                 btnAdd.Location = new Point(this.Width - 110, 6);
             if (txtNewTitle != null)
                 txtNewTitle.Size = new Size(this.Width - 170, 22);
+            if (btnClearCompleted != null)
+                btnClearCompleted.Location = new Point(this.Width - 84, 4);
             Invalidate();
         }
     }

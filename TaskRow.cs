@@ -65,8 +65,8 @@ namespace SimpleTodo
             {
                 Text = "▸",
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Microsoft YaHei UI", 7f),
-                Size = new Size(16, 16),
+                Font = new Font("Microsoft YaHei UI", 9f),
+                Size = new Size(20, 20),
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = Color.Transparent,
                 ForeColor = TextMuted,
@@ -239,15 +239,15 @@ namespace SimpleTodo
         private void LayoutControls()
         {
             if (lblTitle == null) return; // Not initialized yet
-            int indent = task.Depth * 24 + 8;
+            int indent = task.Depth * 32 + 8;
             int w = this.Width;
 
             // Row 1 (y=4, h=24): controls
             int y1 = 4;
             int x = indent;
 
-            btnCollapse.Location = new Point(x, y1 + 4);
-            x += btnCollapse.Visible ? 18 : 2;
+            btnCollapse.Location = new Point(x, y1 + 2);
+            x += btnCollapse.Visible ? 22 : 2;
 
             chkCompleted.Location = new Point(x, y1 + 4);
             x += 20;
