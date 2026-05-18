@@ -282,7 +282,7 @@ namespace SimpleTodo
             if (isEditingDdl || task.Completed) return;
             isEditingDdl = true;
             lblDate.Visible = false;
-            txtDdlEdit.Text = task.Deadline.HasValue ? task.Deadline.Value.ToString("yyyy/MM/dd") : "";
+            txtDdlEdit.Text = task.Deadline.HasValue ? task.Deadline.Value.ToString("MM/dd") : "";
             txtDdlEdit.Visible = true;
             txtDdlEdit.Focus();
             txtDdlEdit.SelectAll();
@@ -309,8 +309,7 @@ namespace SimpleTodo
             else
             {
                 DateTime ddl;
-                if (DateTime.TryParseExact(input, "yyyy/MM/dd",
-                    null, System.Globalization.DateTimeStyles.None, out ddl))
+                if (TaskItem.TryParseDdl(input, out ddl))
                 {
                     if (!task.Deadline.HasValue || task.Deadline.Value.Date != ddl.Date)
                     {

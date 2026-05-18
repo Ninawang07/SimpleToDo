@@ -44,6 +44,22 @@ namespace SimpleTodo
             CompletedAt = Completed ? (DateTime?)DateTime.Now : null;
         }
 
+        public static bool TryParseDdl(string input, out DateTime result)
+        {
+            if (DateTime.TryParseExact(input, "yyyy/MM/dd",
+                null, System.Globalization.DateTimeStyles.None, out result))
+                return true;
+
+            if (DateTime.TryParseExact(input, "MM/dd",
+                null, System.Globalization.DateTimeStyles.None, out result))
+            {
+                result = new DateTime(DateTime.Today.Year, result.Month, result.Day);
+                return true;
+            }
+
+            return false;
+        }
+
         public static TaskItem CreateNew(string title, string parentId = null)
         {
             return new TaskItem

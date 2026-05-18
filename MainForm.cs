@@ -491,8 +491,7 @@ namespace SimpleTodo
             if (!string.IsNullOrEmpty(ddlText))
             {
                 DateTime ddl;
-                if (DateTime.TryParseExact(ddlText, "yyyy/MM/dd",
-                    null, System.Globalization.DateTimeStyles.None, out ddl))
+                if (TaskItem.TryParseDdl(ddlText, out ddl))
                 {
                     item.Deadline = ddl;
                 }
