@@ -28,7 +28,7 @@ namespace SimpleTodo
 
             var json = File.ReadAllText(filePath);
             var tree = serializer.Deserialize<List<TaskItem>>(json) ?? new List<TaskItem>();
-            return BuildFlatList(tree);
+            return BuildFlatList(tree, false);
         }
 
         public void SaveAll(List<TaskItem> flatList)
@@ -46,24 +46,26 @@ namespace SimpleTodo
 
         /// <summary>
         /// Depth-first flatten: tree with nested Children -> flat list with Depth values.
-        /// Respects IsExpanded: collapsed children are excluded.
+        /// When respectExpand is true, collapsed children are excluded (UI display).
+        /// When false, all items are included regardless of expand state (data loading).
         /// </summary>
-        public static List<TaskItem> BuildFlatList(List<TaskItem> tree)
+        public static List<TaskItem> BuildFlatList(List<TaskItem> tree, bool respectExpand)
         {
             var result = new List<TaskItem>();
-            Flatten(tree, result, 0);
+            Flatten(tree, result, 0, respectExpand);
             return result;
         }
 
-        private static void Flatten(List<TaskItem> items, List<TaskItem> result, int depth)
+        private static void Flatten(List<TaskItem> items, List<TaskItem> result, int depth, bool respectExpand)
         {
             if (items == null) return;
             foreach (var item in items.OrderBy(i => i.SortOrder).ThenBy(i => i.CreatedAt))
             {
                 item.Depth = depth;
                 result.Add(item);
-                if (item.IsExpanded && item.Children != null && item.Children.Count > 0)
-                    Flatten(item.Children, result, depth + 1);
+                bool descend = !respectExpand || item.IsExpanded;
+                if (descend && item.Children != null && item.Children.Count > 0)
+                    Flatten(item.Children, result, depth + 1, respectExpand);
             }
         }
 

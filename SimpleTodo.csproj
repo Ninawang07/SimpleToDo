@@ -47,6 +47,7 @@
     <Compile Include="TaskRow.cs" />
     <Compile Include="TaskListPanel.cs" />
     <Compile Include="MainForm.cs" />
+    <Compile Include="ModernCheckBox.cs" />
     <Compile Include="NativeMethods.cs" />
   </ItemGroup>
 </Project>

@@ -19,10 +19,10 @@ namespace SimpleTodo
         public event Action<TaskItem> ToggleExpand;
         public event Action CompletedToggled;
 
-        private static readonly Color BgColor = Color.FromArgb(250, 250, 250);
-        private static readonly Color SeparatorBg = Color.FromArgb(245, 245, 245);
-        private static readonly Color TextMuted = Color.FromArgb(160, 160, 160);
-        private static readonly Color BorderColor = Color.FromArgb(220, 220, 220);
+        private static readonly Color BgColor = Color.White;
+        private static readonly Color SeparatorBg = Color.FromArgb(242, 242, 247);
+        private static readonly Color TextSecondary = Color.FromArgb(142, 142, 147);
+        private static readonly Color SeparatorBorder = Color.FromArgb(229, 229, 234);
 
         public TaskListPanel()
         {
@@ -36,14 +36,11 @@ namespace SimpleTodo
         {
             SuspendLayout();
 
-            // Split flat list into active and completed
             var activeList = flatList.Where(t => !t.Completed).ToList();
             var completedList = flatList.Where(t => t.Completed).ToList();
 
-            // Clear all existing task rows
             ClearAll();
 
-            // Build active task rows
             foreach (var task in activeList)
             {
                 var row = new TaskRow(task);
@@ -53,7 +50,6 @@ namespace SimpleTodo
             }
             activeRowCount = activeList.Count;
 
-            // Completed section
             if (showCompleted && completedList.Count > 0)
             {
                 EnsureSeparator();
@@ -87,13 +83,21 @@ namespace SimpleTodo
             {
                 separator = new Label
                 {
-                    Height = 24,
+                    Height = 28,
                     Font = new Font("Microsoft YaHei UI", 7.5f),
-                    ForeColor = TextMuted,
+                    ForeColor = TextSecondary,
                     BackColor = SeparatorBg,
                     TextAlign = ContentAlignment.MiddleLeft,
                     Cursor = Cursors.Hand,
                     Padding = new Padding(12, 0, 0, 0)
+                };
+                separator.Paint += (s, e) =>
+                {
+                    using (var pen = new Pen(SeparatorBorder))
+                    {
+                        e.Graphics.DrawLine(pen, 0, 0, separator.Width, 0);
+                        e.Graphics.DrawLine(pen, 0, separator.Height - 1, separator.Width, separator.Height - 1);
+                    }
                 };
                 separator.Click += (s, e) =>
                 {
@@ -114,7 +118,7 @@ namespace SimpleTodo
                     var arrow = completedExpanded ? "▾" : "▸";
                     separator.Text = arrow + " 已完成 (" + completedCount + ")";
                 }
-                separator.Tag = completedExpanded; // store state for caller
+                separator.Tag = completedExpanded;
             }
         }
 
@@ -158,7 +162,6 @@ namespace SimpleTodo
             if (this.VerticalScroll.Visible)
                 w = this.ClientSize.Width - SystemInformation.VerticalScrollBarWidth;
 
-            // Position active rows (indices 0 to activeRowCount-1)
             for (int i = 0; i < activeRowCount && i < rows.Count; i++)
             {
                 if (rows[i].Visible)
@@ -169,7 +172,6 @@ namespace SimpleTodo
                 }
             }
 
-            // Separator between active and completed
             if (separator != null && separator.Visible)
             {
                 separator.Width = w;
@@ -177,7 +179,6 @@ namespace SimpleTodo
                 y += separator.Height;
             }
 
-            // Position completed rows (indices activeRowCount to end)
             for (int i = activeRowCount; i < rows.Count; i++)
             {
                 if (rows[i].Visible)
@@ -212,14 +213,11 @@ namespace SimpleTodo
 
         public void CommitSeparatorToggle()
         {
-            // Called by MainForm after checking if separator was clicked
             if (separator != null && separator.Tag is bool)
             {
                 bool current = (bool)separator.Tag;
                 if (current != completedExpanded)
-                {
                     completedExpanded = current;
-                }
             }
         }
 

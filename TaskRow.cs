@@ -12,27 +12,30 @@ namespace SimpleTodo
         private static readonly Font DateFontOverdue = new Font("Microsoft YaHei UI", 7.5f, FontStyle.Bold);
         private static readonly Font BtnFont = new Font("Microsoft YaHei UI", 9f);
 
-        private static readonly Color TextColor = Color.FromArgb(30, 30, 30);
-        private static readonly Color TextMuted = Color.FromArgb(160, 160, 160);
-        private static readonly Color TextCompleted = Color.FromArgb(192, 192, 192);
-        private static readonly Color OverdueColor = Color.FromArgb(211, 47, 47);
-        private static readonly Color BgColor = Color.FromArgb(250, 250, 250);
-        private static readonly Color HoverColor = Color.FromArgb(240, 240, 240);
-        private static readonly Color BorderColor = Color.FromArgb(232, 232, 232);
+        private static readonly Color TextColor = Color.FromArgb(28, 28, 30);
+        private static readonly Color TextSecondary = Color.FromArgb(142, 142, 147);
+        private static readonly Color TextCompleted = Color.FromArgb(174, 174, 180);
+        private static readonly Color OverdueColor = Color.FromArgb(234, 88, 12);
+        private static readonly Color OverdueBgTint = Color.FromArgb(255, 245, 245);
+        private static readonly Color BgColor = Color.White;
+        private static readonly Color HoverColor = Color.FromArgb(242, 242, 247);
+        private static readonly Color DividerColor = Color.FromArgb(240, 240, 244);
+        private static readonly Color BtnHoverBg = Color.FromArgb(236, 236, 241);
+        private static readonly Color DeleteHoverBg = Color.FromArgb(255, 232, 232);
+        private static readonly Color DeleteHoverFg = Color.FromArgb(234, 88, 12);
+        private static readonly Color InputBgColor = Color.White;
 
         private TaskItem task;
         private bool isEditing;
         private bool isEditingDdl;
 
-        // Title row controls
         private Button btnCollapse;
-        private CheckBox chkCompleted;
+        private ModernCheckBox chkCompleted;
         private Label lblTitle;
         private TextBox txtTitle;
         private Button btnAddSub;
         private Button btnDelete;
 
-        // Date row
         private Label lblDate;
         private TextBox txtDdlEdit;
 
@@ -60,7 +63,6 @@ namespace SimpleTodo
 
         private void BuildControls()
         {
-            // Collapse button
             btnCollapse = new Button
             {
                 Text = "▸",
@@ -69,29 +71,23 @@ namespace SimpleTodo
                 Size = new Size(20, 20),
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = Color.Transparent,
-                ForeColor = TextMuted,
+                ForeColor = TextSecondary,
                 Visible = false,
                 Margin = new Padding(0),
                 Padding = new Padding(0)
             };
             btnCollapse.FlatAppearance.BorderSize = 0;
-            btnCollapse.FlatAppearance.MouseOverBackColor = HoverColor;
+            btnCollapse.FlatAppearance.MouseOverBackColor = BtnHoverBg;
             btnCollapse.Click += (s, e) => { if (ToggleExpand != null) ToggleExpand(task); };
 
-            // Checkbox
-            chkCompleted = new CheckBox
+            chkCompleted = new ModernCheckBox
             {
-                Size = new Size(16, 16),
-                BackColor = Color.Transparent,
+                Size = new Size(20, 20),
                 Margin = new Padding(0),
-                Padding = new Padding(0),
-                FlatStyle = FlatStyle.Flat
+                Padding = new Padding(0)
             };
-            chkCompleted.FlatAppearance.BorderSize = 1;
-            chkCompleted.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
             chkCompleted.CheckedChanged += OnCheckChanged;
 
-            // Title label (default view)
             lblTitle = new Label
             {
                 AutoSize = false,
@@ -104,12 +100,11 @@ namespace SimpleTodo
             };
             lblTitle.DoubleClick += (s, e) => EnterEditMode();
 
-            // Title textbox (edit mode, hidden by default)
             txtTitle = new TextBox
             {
                 Font = TitleFont,
                 ForeColor = TextColor,
-                BackColor = Color.White,
+                BackColor = InputBgColor,
                 BorderStyle = BorderStyle.None,
                 Visible = false,
                 Margin = new Padding(0)
@@ -117,7 +112,6 @@ namespace SimpleTodo
             txtTitle.KeyDown += OnTitleKeyDown;
             txtTitle.LostFocus += (s, e) => CommitEdit();
 
-            // Add subtask button
             btnAddSub = new Button
             {
                 Text = "+",
@@ -126,37 +120,37 @@ namespace SimpleTodo
                 Size = new Size(20, 20),
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = Color.Transparent,
-                ForeColor = TextMuted,
+                ForeColor = TextSecondary,
                 Margin = new Padding(0),
                 Padding = new Padding(0)
             };
             btnAddSub.FlatAppearance.BorderSize = 0;
-            btnAddSub.FlatAppearance.MouseOverBackColor = HoverColor;
+            btnAddSub.FlatAppearance.MouseOverBackColor = BtnHoverBg;
             btnAddSub.Click += (s, e) => { if (SubTaskAdded != null) SubTaskAdded(task); };
 
-            // Delete button
             btnDelete = new Button
             {
                 Text = "×",
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Microsoft YaHei UI", 10f, FontStyle.Bold),
+                Font = new Font("Microsoft YaHei UI", 9f),
                 Size = new Size(20, 20),
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = Color.Transparent,
-                ForeColor = TextMuted,
+                ForeColor = TextSecondary,
                 Margin = new Padding(0),
                 Padding = new Padding(0)
             };
             btnDelete.FlatAppearance.BorderSize = 0;
-            btnDelete.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 230, 230);
+            btnDelete.FlatAppearance.MouseOverBackColor = DeleteHoverBg;
+            btnDelete.MouseEnter += (s, e) => btnDelete.ForeColor = DeleteHoverFg;
+            btnDelete.MouseLeave += (s, e) => btnDelete.ForeColor = TextSecondary;
             btnDelete.Click += (s, e) => { if (DeleteRequested != null) DeleteRequested(task); };
 
-            // Date label
             lblDate = new Label
             {
                 AutoSize = false,
                 Font = DateFont,
-                ForeColor = TextMuted,
+                ForeColor = TextSecondary,
                 BackColor = Color.Transparent,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Height = 18,
@@ -165,12 +159,11 @@ namespace SimpleTodo
             };
             lblDate.DoubleClick += (s, e) => EnterDdlEditMode();
 
-            // DDL edit textbox (hidden, shown on double-click date)
             txtDdlEdit = new TextBox
             {
                 Font = DateFont,
                 ForeColor = TextColor,
-                BackColor = Color.White,
+                BackColor = InputBgColor,
                 BorderStyle = BorderStyle.FixedSingle,
                 Visible = false,
                 Height = 18,
@@ -194,22 +187,18 @@ namespace SimpleTodo
             task = t;
             showOverdue = task.IsOverdue;
 
-            // Collapse button
             btnCollapse.Visible = task.HasChildren;
             btnCollapse.Text = task.IsExpanded ? "▾" : "▸";
 
-            // Checkbox
             chkCompleted.Checked = task.Completed;
 
-            // Title
             lblTitle.Text = task.Title;
             lblTitle.Font = task.Completed ? TitleFontStrike : TitleFont;
             lblTitle.ForeColor = task.Completed ? TextCompleted : TextColor;
 
-            // Date info
             var created = task.CreatedAt.ToString("MM/dd");
             var deadline = task.Deadline.HasValue ? task.Deadline.Value.ToString("MM/dd") : "──";
-            lblDate.Text = "创建: " + created + "   截止: " + deadline;
+            lblDate.Text = "创建 " + created + "   截止 " + deadline;
             if (showOverdue && !task.Completed)
             {
                 lblDate.Text += "  [已逾期]";
@@ -223,11 +212,10 @@ namespace SimpleTodo
             }
             else
             {
-                lblDate.ForeColor = TextMuted;
+                lblDate.ForeColor = TextSecondary;
                 lblDate.Font = DateFont;
             }
 
-            // Edit mode — exit if was editing
             if (isEditing)
                 CancelEdit();
             if (isEditingDdl)
@@ -238,19 +226,18 @@ namespace SimpleTodo
 
         private void LayoutControls()
         {
-            if (lblTitle == null) return; // Not initialized yet
+            if (lblTitle == null) return;
             int indent = task.Depth * 32 + 8;
             int w = this.Width;
 
-            // Row 1 (y=4, h=24): controls
             int y1 = 4;
             int x = indent;
 
             btnCollapse.Location = new Point(x, y1 + 2);
             x += btnCollapse.Visible ? 22 : 2;
 
-            chkCompleted.Location = new Point(x, y1 + 4);
-            x += 20;
+            chkCompleted.Location = new Point(x, y1 + 2);
+            x += 24;
 
             int rightBtns = 0;
             btnDelete.Location = new Point(w - 24, y1 + 2);
@@ -258,22 +245,19 @@ namespace SimpleTodo
             btnAddSub.Location = new Point(w - 24 - rightBtns, y1 + 2);
             rightBtns += 24;
 
-            int titleWidth = w - x - rightBtns - 4;
+            int titleWidth = w - x - rightBtns - 6;
             lblTitle.Location = new Point(x, y1 + 2);
             lblTitle.Size = new Size(titleWidth, 22);
             txtTitle.Location = new Point(x, y1 + 1);
             txtTitle.Size = new Size(titleWidth, 22);
 
-            // Row 2 (y=28, h=18): date
             lblDate.Location = new Point(indent + 24, 28);
             lblDate.Size = new Size(w - indent - 48, 18);
 
-            // DDL edit box: overlay on the right portion of the date row
             int ddlEditWidth = 80;
             txtDdlEdit.Location = new Point(w - ddlEditWidth - 24, 27);
             txtDdlEdit.Size = new Size(ddlEditWidth, 18);
 
-            // Height
             this.Height = 52;
         }
 
@@ -298,7 +282,6 @@ namespace SimpleTodo
             var input = txtDdlEdit.Text.Trim();
             if (string.IsNullOrEmpty(input))
             {
-                // Clear deadline
                 if (task.Deadline.HasValue)
                 {
                     task.Deadline = null;
@@ -320,7 +303,6 @@ namespace SimpleTodo
                 }
                 else
                 {
-                    // Invalid format — revert
                     Bind(task);
                 }
             }
@@ -369,7 +351,7 @@ namespace SimpleTodo
 
             var newTitle = txtTitle.Text.Trim();
             if (string.IsNullOrEmpty(newTitle))
-                newTitle = task.Title; // revert to old if empty
+                newTitle = task.Title;
 
             if (newTitle != task.Title)
             {
@@ -413,15 +395,13 @@ namespace SimpleTodo
         {
             base.OnPaint(e);
 
-            // Red left bar for overdue
             if (showOverdue && !task.Completed)
             {
-                using (var brush = new SolidBrush(OverdueColor))
-                    e.Graphics.FillRectangle(brush, 0, 0, 3, this.Height);
+                using (var brush = new SolidBrush(Color.FromArgb(234, 88, 12)))
+                    e.Graphics.FillRectangle(brush, 0, 0, 2, this.Height);
             }
 
-            // Bottom border
-            using (var pen = new Pen(BorderColor))
+            using (var pen = new Pen(DividerColor))
                 e.Graphics.DrawLine(pen, 0, this.Height - 1, this.Width, this.Height - 1);
         }
 
@@ -436,7 +416,9 @@ namespace SimpleTodo
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
-            if (!showOverdue || task.Completed)
+            if (showOverdue && !task.Completed)
+                BackColor = OverdueBgTint;
+            else
                 BackColor = HoverColor;
         }
 

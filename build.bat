@@ -15,6 +15,7 @@
   TaskRow.cs ^
   TaskListPanel.cs ^
   MainForm.cs ^
+  ModernCheckBox.cs ^
   NativeMethods.cs
 
 if %ERRORLEVEL% EQU 0 (
