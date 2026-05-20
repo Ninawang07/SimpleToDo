@@ -28,6 +28,15 @@ namespace SimpleTodo
         private ContextMenuStrip trayMenu;
         private bool isExiting;
         private bool overdueBalloonShown;
+        private System.Windows.Forms.Timer mouseLeaveTimer;
+        private System.Windows.Forms.Timer animTimer;
+        private int mouseOutsideTicks;
+        private bool mouseHasEntered;
+        private bool isAnimating;
+        private bool animatingDown;
+        private int normalY;
+        private int collapsedY;
+        private const int ANIM_STEP = 32;
         private string notesFilePath;
 
         // Title bar
@@ -77,6 +86,10 @@ namespace SimpleTodo
             SetupAutoSave();
             SetupOverdueCheck();
             CheckOverdueOnStartup();
+            SetupMouseLeaveDetection();
+            SetupAnimation();
+            CreateStartupShortcut();
+            this.BeginInvoke((Action)(() => this.Hide()));
         }
 
         private void InitializeForm()
@@ -91,6 +104,7 @@ namespace SimpleTodo
             this.ShowInTaskbar = true;
             notepadExpanded = true;
             PositionWindow();
+            this.Opacity = 0;
 
             try
             {
@@ -529,19 +543,144 @@ namespace SimpleTodo
 
         private void ToggleVisibility()
         {
-            if (this.Visible)
-                HideToTray();
-            else
-            {
-                this.Show();
-                NativeMethods.SetForegroundWindow(this.Handle);
-                txtNewTitle.Focus();
-            }
+            if (this.Visible && !isAnimating)
+                CollapseToBottom();
+            else if (!this.Visible && !isAnimating)
+                PopupFromBottom();
         }
 
         private void HideToTray()
         {
-            this.Hide();
+            CollapseToBottom();
+        }
+
+        private void SetupMouseLeaveDetection()
+        {
+            mouseLeaveTimer = new System.Windows.Forms.Timer { Interval = 250 };
+            mouseLeaveTimer.Tick += (s, e) =>
+            {
+                if (!this.Visible || isAnimating) return;
+
+                var expandedBounds = new Rectangle(
+                    this.Bounds.X - 10, this.Bounds.Y - 10,
+                    this.Bounds.Width + 20, this.Bounds.Height + 12);
+
+                if (expandedBounds.Contains(Cursor.Position))
+                {
+                    mouseOutsideTicks = 0;
+                    mouseHasEntered = true;
+                }
+                else if (mouseHasEntered)
+                {
+                    mouseOutsideTicks++;
+                    if (mouseOutsideTicks >= 3)
+                    {
+                        mouseOutsideTicks = 0;
+                        mouseLeaveTimer.Stop();
+                        CollapseToBottom();
+                    }
+                }
+            };
+        }
+
+        private void SetupAnimation()
+        {
+            animTimer = new System.Windows.Forms.Timer { Interval = 16 };
+            animTimer.Tick += AnimTimer_Tick;
+            var workArea = Screen.PrimaryScreen.WorkingArea;
+            normalY = workArea.Bottom - this.Height - 8;
+            collapsedY = workArea.Bottom - 4;
+        }
+
+        private void PopupFromBottom()
+        {
+            var workArea = Screen.PrimaryScreen.WorkingArea;
+            normalY = workArea.Bottom - this.Height - 8;
+            collapsedY = workArea.Bottom - 4;
+
+            this.Opacity = 1;
+            this.Location = new Point(this.Location.X, collapsedY);
+            this.Show();
+            NativeMethods.SetForegroundWindow(this.Handle);
+
+            animatingDown = false;
+            isAnimating = true;
+            animTimer.Start();
+        }
+
+        private void CollapseToBottom()
+        {
+            if (!this.Visible) return;
+            if (isAnimating && animatingDown) return;
+            mouseLeaveTimer.Stop();
+            mouseOutsideTicks = 0;
+            mouseHasEntered = false;
+            animatingDown = true;
+            isAnimating = true;
+            animTimer.Start();
+        }
+
+        private void AnimTimer_Tick(object sender, EventArgs e)
+        {
+            int targetY = animatingDown ? collapsedY : normalY;
+            int currentY = this.Location.Y;
+
+            if (currentY == targetY)
+            {
+                animTimer.Stop();
+                isAnimating = false;
+                if (animatingDown)
+                    this.Hide();
+                else
+                {
+                    mouseLeaveTimer.Start();
+                    txtNewTitle.Focus();
+                }
+                return;
+            }
+
+            int step = animatingDown ? ANIM_STEP : -ANIM_STEP;
+            int newY = currentY + step;
+            if (animatingDown)
+                newY = Math.Min(newY, targetY);
+            else
+                newY = Math.Max(newY, targetY);
+
+            this.Location = new Point(this.Location.X, newY);
+        }
+
+        private void CreateStartupShortcut()
+        {
+            try
+            {
+                string startupDir = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+                string shortcutPath = Path.Combine(startupDir, "SimpleTodo.lnk");
+                if (File.Exists(shortcutPath)) return;
+
+                string exePath = Application.ExecutablePath;
+                string dir = Path.GetDirectoryName(exePath);
+
+                string scriptPath = Path.Combine(Path.GetTempPath(), "simpletodo_setup.ps1");
+                string ps = string.Format(
+                    "$s=(New-Object -COM WScript.Shell).CreateShortcut('{0}');" +
+                    "$s.TargetPath='{1}';" +
+                    "$s.WorkingDirectory='{2}';" +
+                    "$s.Save()",
+                    shortcutPath.Replace("'", "''"),
+                    exePath.Replace("'", "''"),
+                    dir.Replace("'", "''"));
+                File.WriteAllText(scriptPath, ps);
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"" + scriptPath + "\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch { }
         }
 
         private void ExitApp()
@@ -551,6 +690,8 @@ namespace SimpleTodo
             if (autoSaveTimer != null) autoSaveTimer.Stop();
             if (overdueTimer != null) overdueTimer.Stop();
             if (notepadSaveTimer != null) { notepadSaveTimer.Stop(); SaveNotes(); }
+            if (mouseLeaveTimer != null) mouseLeaveTimer.Stop();
+            if (animTimer != null) animTimer.Stop();
             store.SaveAll(tasks);
             trayIcon.Visible = false;
             trayIcon.Dispose();
@@ -781,6 +922,8 @@ namespace SimpleTodo
             if (autoSaveTimer != null) autoSaveTimer.Stop();
             if (overdueTimer != null) overdueTimer.Stop();
             if (notepadSaveTimer != null) { notepadSaveTimer.Stop(); SaveNotes(); }
+            if (mouseLeaveTimer != null) mouseLeaveTimer.Stop();
+            if (animTimer != null) animTimer.Stop();
             store.SaveAll(tasks);
             trayIcon.Visible = false;
             trayIcon.Dispose();

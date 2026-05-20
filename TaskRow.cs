@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace SimpleTodo
@@ -8,8 +9,7 @@ namespace SimpleTodo
     {
         private static readonly Font TitleFont = new Font("Microsoft YaHei UI", 10f);
         private static readonly Font TitleFontStrike = new Font("Microsoft YaHei UI", 10f, FontStyle.Strikeout);
-        private static readonly Font DateFont = new Font("Microsoft YaHei UI", 7.5f);
-        private static readonly Font DateFontOverdue = new Font("Microsoft YaHei UI", 7.5f, FontStyle.Bold);
+        private static readonly Font BadgeFont = new Font("Microsoft YaHei UI", 9f);
         private static readonly Font BtnFont = new Font("Microsoft YaHei UI", 9f);
 
         private static readonly Color TextColor = Color.FromArgb(28, 28, 30);
@@ -24,6 +24,8 @@ namespace SimpleTodo
         private static readonly Color DeleteHoverBg = Color.FromArgb(255, 232, 232);
         private static readonly Color DeleteHoverFg = Color.FromArgb(234, 88, 12);
         private static readonly Color InputBgColor = Color.White;
+        private static readonly Color BadgeBorder = Color.FromArgb(209, 209, 214);
+        private static readonly Color BadgeBorderEmpty = Color.FromArgb(229, 229, 234);
 
         private TaskItem task;
         private bool isEditing;
@@ -35,11 +37,14 @@ namespace SimpleTodo
         private TextBox txtTitle;
         private Button btnAddSub;
         private Button btnDelete;
-
-        private Label lblDate;
         private TextBox txtDdlEdit;
 
         private bool showOverdue;
+        private Rectangle createdBadgeRect;
+        private Rectangle ddlBadgeRect;
+        private string createdText;
+        private string ddlText;
+        private bool ddlOverdue;
 
         public TaskItem Task { get { return task; } }
 
@@ -58,7 +63,7 @@ namespace SimpleTodo
 
             BuildControls();
             Bind(task);
-            this.Height = 52;
+            this.Height = 32;
         }
 
         private void BuildControls()
@@ -146,27 +151,14 @@ namespace SimpleTodo
             btnDelete.MouseLeave += (s, e) => btnDelete.ForeColor = TextSecondary;
             btnDelete.Click += (s, e) => { if (DeleteRequested != null) DeleteRequested(task); };
 
-            lblDate = new Label
-            {
-                AutoSize = false,
-                Font = DateFont,
-                ForeColor = TextSecondary,
-                BackColor = Color.Transparent,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Height = 18,
-                Margin = new Padding(0),
-                Padding = new Padding(0)
-            };
-            lblDate.DoubleClick += (s, e) => EnterDdlEditMode();
-
             txtDdlEdit = new TextBox
             {
-                Font = DateFont,
+                Font = BadgeFont,
                 ForeColor = TextColor,
                 BackColor = InputBgColor,
                 BorderStyle = BorderStyle.FixedSingle,
                 Visible = false,
-                Height = 18,
+                Height = 22,
                 Margin = new Padding(0)
             };
             txtDdlEdit.KeyDown += OnDdlKeyDown;
@@ -178,7 +170,6 @@ namespace SimpleTodo
             Controls.Add(txtTitle);
             Controls.Add(btnAddSub);
             Controls.Add(btnDelete);
-            Controls.Add(lblDate);
             Controls.Add(txtDdlEdit);
         }
 
@@ -186,6 +177,7 @@ namespace SimpleTodo
         {
             task = t;
             showOverdue = task.IsOverdue;
+            ddlOverdue = showOverdue && !task.Completed;
 
             btnCollapse.Visible = task.HasChildren;
             btnCollapse.Text = task.IsExpanded ? "▾" : "▸";
@@ -196,25 +188,13 @@ namespace SimpleTodo
             lblTitle.Font = task.Completed ? TitleFontStrike : TitleFont;
             lblTitle.ForeColor = task.Completed ? TextCompleted : TextColor;
 
-            var created = task.CreatedAt.ToString("MM/dd");
-            var deadline = task.Deadline.HasValue ? task.Deadline.Value.ToString("MM/dd") : "──";
-            lblDate.Text = "创建 " + created + "   截止 " + deadline;
-            if (showOverdue && !task.Completed)
-            {
-                lblDate.Text += "  [已逾期]";
-                lblDate.ForeColor = OverdueColor;
-                lblDate.Font = DateFontOverdue;
-            }
-            else if (task.Completed)
-            {
-                lblDate.ForeColor = TextCompleted;
-                lblDate.Font = DateFont;
-            }
+            createdText = task.CreatedAt.ToString("MM/dd");
+            if (ddlOverdue)
+                ddlText = "已逾期";
+            else if (task.Deadline.HasValue)
+                ddlText = task.Deadline.Value.ToString("MM/dd");
             else
-            {
-                lblDate.ForeColor = TextSecondary;
-                lblDate.Font = DateFont;
-            }
+                ddlText = "";
 
             if (isEditing)
                 CancelEdit();
@@ -229,43 +209,148 @@ namespace SimpleTodo
             if (lblTitle == null) return;
             int indent = task.Depth * 32 + 8;
             int w = this.Width;
+            int y = 2;
 
-            int y1 = 4;
             int x = indent;
 
-            btnCollapse.Location = new Point(x, y1 + 2);
-            x += btnCollapse.Visible ? 22 : 2;
+            btnCollapse.Location = new Point(x, y + 1);
+            // Root tasks always reserve collapse space for alignment; sub-tasks only when visible
+            if (task.Depth == 0)
+                x += 22;
+            else
+                x += btnCollapse.Visible ? 22 : 2;
 
-            chkCompleted.Location = new Point(x, y1 + 2);
+            chkCompleted.Location = new Point(x, y + 1);
             x += 24;
 
-            int rightBtns = 0;
-            btnDelete.Location = new Point(w - 24, y1 + 2);
-            rightBtns += 24;
-            btnAddSub.Location = new Point(w - 24 - rightBtns, y1 + 2);
-            rightBtns += 24;
+            // Right side: [delete] [addSub] [gap] [ddl badge] [gap] [created badge]
+            int rightX = w - 4;
+            btnDelete.Location = new Point(rightX - 20, y + 1);
+            rightX -= 24;
+            btnAddSub.Location = new Point(rightX - 20, y + 1);
+            rightX -= 28;
 
-            int titleWidth = w - x - rightBtns - 6;
-            lblTitle.Location = new Point(x, y1 + 2);
+            const int badgeW = 52;
+            int badgeY = y;
+            int badgeH = 22;
+
+            ddlBadgeRect = new Rectangle(rightX - badgeW, badgeY, badgeW, badgeH);
+            rightX -= badgeW + 6;
+
+            createdBadgeRect = new Rectangle(rightX - badgeW, badgeY, badgeW, badgeH);
+
+            int titleWidth = createdBadgeRect.X - x - 8;
+            if (titleWidth < 40) titleWidth = 40;
+            lblTitle.Location = new Point(x, y + 1);
             lblTitle.Size = new Size(titleWidth, 22);
-            txtTitle.Location = new Point(x, y1 + 1);
+            txtTitle.Location = new Point(x, y + 1);
             txtTitle.Size = new Size(titleWidth, 22);
 
-            lblDate.Location = new Point(indent + 24, 28);
-            lblDate.Size = new Size(w - indent - 48, 18);
+            txtDdlEdit.Location = new Point(ddlBadgeRect.X - 2, ddlBadgeRect.Y);
+            txtDdlEdit.Size = new Size(ddlBadgeRect.Width + 4, ddlBadgeRect.Height);
+        }
 
-            int ddlEditWidth = 80;
-            txtDdlEdit.Location = new Point(w - ddlEditWidth - 24, 27);
-            txtDdlEdit.Size = new Size(ddlEditWidth, 18);
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
 
-            this.Height = 52;
+            // Left overdue bar
+            if (showOverdue && !task.Completed)
+            {
+                using (var brush = new SolidBrush(OverdueColor))
+                    e.Graphics.FillRectangle(brush, 0, 0, 2, this.Height);
+            }
+
+            // Bottom divider
+            using (var pen = new Pen(DividerColor))
+                e.Graphics.DrawLine(pen, 0, this.Height - 1, this.Width, this.Height - 1);
+
+            // Draw pill badges
+            if (createdBadgeRect.Width > 0)
+            {
+                Color cBorder = task.Completed ? TextCompleted : BadgeBorder;
+                Color cText = task.Completed ? TextCompleted : TextSecondary;
+                DrawPillBadge(e.Graphics, createdBadgeRect, createdText, cBorder, cText);
+            }
+
+            if (ddlBadgeRect.Width > 0)
+            {
+                Color cBorder, cText;
+                if (task.Completed)
+                {
+                    cBorder = TextCompleted;
+                    cText = TextCompleted;
+                }
+                else if (ddlOverdue)
+                {
+                    cBorder = OverdueColor;
+                    cText = OverdueColor;
+                }
+                else if (string.IsNullOrEmpty(ddlText))
+                {
+                    cBorder = BadgeBorderEmpty;
+                    cText = TextSecondary;
+                }
+                else
+                {
+                    cBorder = BadgeBorder;
+                    cText = TextSecondary;
+                }
+                DrawPillBadge(e.Graphics, ddlBadgeRect, string.IsNullOrEmpty(ddlText) ? "" : ddlText, cBorder, cText);
+            }
+        }
+
+        private void DrawPillBadge(Graphics g, Rectangle rect, string text, Color borderColor, Color textColor)
+        {
+            if (rect.Width <= 0 || rect.Height <= 0) return;
+            int r = Math.Min(rect.Height / 2, 11);
+            int d = r * 2;
+
+            using (var path = new GraphicsPath())
+            {
+                path.AddArc(rect.X, rect.Y, d, d, 180, 90);
+                path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
+                path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
+                path.AddArc(rect.X, rect.Bottom - d, d, d, 90, 90);
+                path.CloseFigure();
+
+                using (var pen = new Pen(borderColor, 1f))
+                    g.DrawPath(pen, path);
+
+                if (!string.IsNullOrEmpty(text))
+                {
+                    using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                    using (var brush = new SolidBrush(textColor))
+                        g.DrawString(text, BadgeFont, brush, rect, sf);
+                }
+            }
+        }
+
+        // ── DDL editing ──
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (e.Clicks == 2 && e.Button == MouseButtons.Left && !task.Completed)
+            {
+                if (ddlBadgeRect.Contains(e.Location))
+                    EnterDdlEditMode();
+            }
+            base.OnMouseDown(e);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            if (!task.Completed && ddlBadgeRect.Contains(e.Location))
+                this.Cursor = Cursors.IBeam;
+            else
+                this.Cursor = Cursors.Default;
         }
 
         private void EnterDdlEditMode()
         {
             if (isEditingDdl || task.Completed) return;
             isEditingDdl = true;
-            lblDate.Visible = false;
             txtDdlEdit.Text = task.Deadline.HasValue ? task.Deadline.Value.ToString("MM/dd") : "";
             txtDdlEdit.Visible = true;
             txtDdlEdit.Focus();
@@ -277,7 +362,6 @@ namespace SimpleTodo
             if (!isEditingDdl) return;
             isEditingDdl = false;
             txtDdlEdit.Visible = false;
-            lblDate.Visible = true;
 
             var input = txtDdlEdit.Text.Trim();
             if (string.IsNullOrEmpty(input))
@@ -313,7 +397,6 @@ namespace SimpleTodo
             if (!isEditingDdl) return;
             isEditingDdl = false;
             txtDdlEdit.Visible = false;
-            lblDate.Visible = true;
             Bind(task);
         }
 
@@ -330,6 +413,8 @@ namespace SimpleTodo
                 CancelDdlEdit();
             }
         }
+
+        // ── Title editing ──
 
         public void EnterEditMode()
         {
@@ -391,28 +476,6 @@ namespace SimpleTodo
             if (TaskChanged != null) TaskChanged(task);
         }
 
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-
-            if (showOverdue && !task.Completed)
-            {
-                using (var brush = new SolidBrush(Color.FromArgb(234, 88, 12)))
-                    e.Graphics.FillRectangle(brush, 0, 0, 2, this.Height);
-            }
-
-            using (var pen = new Pen(DividerColor))
-                e.Graphics.DrawLine(pen, 0, this.Height - 1, this.Width, this.Height - 1);
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            if (lblTitle == null) return;
-            LayoutControls();
-            Invalidate();
-        }
-
         protected override void OnMouseEnter(EventArgs e)
         {
             base.OnMouseEnter(e);
@@ -428,6 +491,14 @@ namespace SimpleTodo
             BackColor = BgColor;
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (lblTitle == null) return;
+            LayoutControls();
+            Invalidate();
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -438,7 +509,6 @@ namespace SimpleTodo
                 if (txtTitle != null) txtTitle.Dispose();
                 if (btnAddSub != null) btnAddSub.Dispose();
                 if (btnDelete != null) btnDelete.Dispose();
-                if (lblDate != null) lblDate.Dispose();
                 if (txtDdlEdit != null) txtDdlEdit.Dispose();
             }
             base.Dispose(disposing);
